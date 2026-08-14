@@ -13,9 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Create virtual environment in /opt/venv
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install python dependencies into virtual environment
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 # --- Production Runner Stage ---
@@ -25,7 +29,7 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Install runtime libraries & healthcheck tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -33,8 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed dependencies from builder stage
-COPY --from=builder /root/.local /root/.local
+# Copy virtual environment with installed packages from builder
+COPY --from=builder /opt/venv /opt/venv
 
 # Copy application source code
 COPY . /app/
@@ -42,11 +46,11 @@ COPY . /app/
 # Make entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
-# Create static and media directories
+# Create static, media, and log directories
 RUN mkdir -p /app/staticfiles /app/media /app/logs
 
-# Set up non-root user for security
-RUN useradd -u 8888 appuser && chown -R appuser:appuser /app
+# Set up non-root user for security and transfer ownership of /app and /opt/venv
+RUN useradd -u 8888 appuser && chown -R appuser:appuser /app /opt/venv
 USER appuser
 
 EXPOSE 8000
