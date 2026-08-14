@@ -1,0 +1,27 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+.env/
+
+# Python compiled files & caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Git & IDEs
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Local databases & logs
+*.sqlite3
+*.db
+logs/
+*.log
+
+# Static build outputs
+staticfiles/
+media/
