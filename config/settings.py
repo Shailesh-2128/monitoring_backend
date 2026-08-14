@@ -105,6 +105,8 @@ import sys
 import dj_database_url
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.strip().strip("'").strip('"')
 
 if DATABASE_URL and 'test' not in sys.argv:
     DATABASES = {
@@ -112,6 +114,7 @@ if DATABASE_URL and 'test' not in sys.argv:
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=True if 'sslmode=require' in DATABASE_URL.lower() else False,
         )
     }
 else:
