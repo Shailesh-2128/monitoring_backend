@@ -270,3 +270,66 @@ def get_notification_logs(request):
     logs = TelegramNotificationLog.objects.all().order_by('-created_at')[:50]
     serializer = TelegramNotificationLogSerializer(logs, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def send_daily_report_view(request):
+    """
+    Manually triggers sending the daily 9:00 PM system health report to Telegram subscribers.
+    """
+    from .report_service import DailyReportService
+    try:
+        sent_count, msg_text = DailyReportService.dispatch_daily_report()
+        return JsonResponse({
+            "message": f"Daily Health Report dispatched to {sent_count} subscriber(s).",
+            "sent_count": sent_count,
+            "report_preview": msg_text
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to dispatch daily report: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def preview_daily_report_view(request):
+    """
+    Returns live preview of the daily service health report.
+    """
+    from .report_service import DailyReportService
+    try:
+        report_data = DailyReportService.generate_report_data()
+        formatted_text = DailyReportService.format_telegram_report(report_data)
+        return JsonResponse({
+            "report_data": report_data,
+            "formatted_text": formatted_text
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to generate report preview: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET', 'POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def report_config_view(request):
+    """
+    GET: Retrieves daily report schedule settings.
+    POST: Updates daily report schedule settings (enabled toggle, scheduled time).
+    """
+    config = TelegramConfig.get_config()
+    if request.method == 'POST':
+        data = request.data
+        if 'daily_report_enabled' in data:
+            config.daily_report_enabled = bool(data['daily_report_enabled'])
+        if 'daily_report_time' in data and data['daily_report_time']:
+            config.daily_report_time = str(data['daily_report_time']).strip()
+        config.save()
+
+    return JsonResponse({
+        "daily_report_enabled": config.daily_report_enabled,
+        "daily_report_time": config.daily_report_time or "21:00",
+        "last_daily_report_sent": str(config.last_daily_report_sent) if config.last_daily_report_sent else None
+    }, status=status.HTTP_200_OK)
+

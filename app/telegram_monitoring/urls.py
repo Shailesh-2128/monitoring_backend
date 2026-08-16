@@ -12,4 +12,7 @@ urlpatterns = [
     path('test-overload/', views.test_overload_alert, name='telegram_test_overload'),
     path('test-push/', views.test_github_push_alert, name='telegram_test_push'),
     path('logs/', views.get_notification_logs, name='telegram_logs'),
+    path('daily-report/send/', views.send_daily_report_view, name='telegram_daily_report_send'),
+    path('daily-report/preview/', views.preview_daily_report_view, name='telegram_daily_report_preview'),
+    path('daily-report/config/', views.report_config_view, name='telegram_daily_report_config'),
 ]

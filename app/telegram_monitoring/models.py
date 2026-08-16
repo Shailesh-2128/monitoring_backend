@@ -18,6 +18,11 @@ class TelegramConfig(models.Model):
     notify_github_push = models.BooleanField(default=True)
     notify_database_backup = models.BooleanField(default=True)
     
+    # Daily Service Health Report Settings (Default: 9:00 PM / 21:00)
+    daily_report_enabled = models.BooleanField(default=True, help_text="Send daily service health report to Telegram")
+    daily_report_time = models.CharField(max_length=10, default='21:00', help_text="Time to send daily report in HH:MM format (24hr, e.g. 21:00 for 9:00 PM)")
+    last_daily_report_sent = models.DateField(null=True, blank=True, help_text="Date when daily report was last sent")
+    
     last_update_id = models.BigIntegerField(default=0, help_text="Offset for getUpdates polling")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -62,6 +67,7 @@ class TelegramNotificationLog(models.Model):
         ('SERVER_OVERLOAD', 'Server Overload Alert'),
         ('GITHUB_PUSH', 'GitHub Push Notification'),
         ('DATABASE_BACKUP', 'Database Backup Notification'),
+        ('DAILY_REPORT', 'Daily Service Health Report'),
         ('TEST', 'Test Notification'),
         ('SYSTEM', 'System Alert'),
     ]
